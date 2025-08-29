@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: flask
-        image: yourhubuser/soloud-flask:latest
+        image: soloud1025/soloud-flask:latest
         ports:
         - containerPort: 5000
