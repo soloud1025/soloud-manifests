@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soloud-flask
+  labels:
+    app: soloud
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: soloud
+  template:
+    metadata:
+      labels:
+        app: soloud
+    spec:
+      containers:
+      - name: flask
+        image: yourhubuser/soloud-flask:latest
+        ports:
+        - containerPort: 5000
