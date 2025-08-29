@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: soloud-flask
+  name: soloud-was
   labels:
-    app: soloud
+    app: soloud-was
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: soloud
+      app: soloud-was
   template:
     metadata:
       labels:
-        app: soloud
+        app: soloud-was
     spec:
       containers:
       - name: flask
