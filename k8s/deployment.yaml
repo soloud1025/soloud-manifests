@@ -19,3 +19,4 @@ spec:
         image: soloud1025/soloud-flask:latest
         ports:
         - containerPort: 5000
+        #soldesk
