@@ -30,6 +30,14 @@ spec:
           value: app
         - name: ALLOWED_ORIGIN
           value: "*"
+
+        # === Redis 캐시 설정 (비밀번호 없음) ===
+        - name: REDIS_HOST
+          value: my-redis-master.caching.svc.cluster.local
+        - name: REDIS_PORT
+          value: "6379"
+        # =====================================
+
         volumeMounts:
         - name: was-env-cors
           mountPath: /opt/bootstrap/bootstrap.py
