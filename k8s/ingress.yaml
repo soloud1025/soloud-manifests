@@ -6,11 +6,63 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
+
+    alb.ingress.kubernetes.io/actions.register-redirect: '{"Type":"redirect","RedirectConfig":{"StatusCode":"HTTP_302","Path":"/register.html"}}'
+    alb.ingress.kubernetes.io/actions.login-redirect:    '{"Type":"redirect","RedirectConfig":{"StatusCode":"HTTP_302","Path":"/login.html"}}'
+    alb.ingress.kubernetes.io/actions.mypage-redirect:   '{"Type":"redirect","RedirectConfig":{"StatusCode":"HTTP_302","Path":"/mypage.html"}}'
+    alb.ingress.kubernetes.io/actions.paycomp-redirect:  '{"Type":"redirect","RedirectConfig":{"StatusCode":"HTTP_302","Path":"/paycomp.html"}}'
+    alb.ingress.kubernetes.io/actions.payment-redirect:  '{"Type":"redirect","RedirectConfig":{"StatusCode":"HTTP_302","Path":"/payment.html"}}'
+    alb.ingress.kubernetes.io/actions.work-redirect:     '{"Type":"redirect","RedirectConfig":{"StatusCode":"HTTP_302","Path":"/work.html"}}'
 spec:
   ingressClassName: alb
   rules:
   - http:
       paths:
+      # ▼ Exact 리다이렉트 (반드시 Prefix 라우팅보다 먼저 배치)
+      - path: /register
+        pathType: Exact
+        backend:
+          service:
+            name: register-redirect
+            port:
+              name: use-annotation
+      - path: /login
+        pathType: Exact
+        backend:
+          service:
+            name: login-redirect
+            port:
+              name: use-annotation
+      - path: /mypage
+        pathType: Exact
+        backend:
+          service:
+            name: mypage-redirect
+            port:
+              name: use-annotation
+      - path: /paycomp
+        pathType: Exact
+        backend:
+          service:
+            name: paycomp-redirect
+            port:
+              name: use-annotation
+      - path: /payment
+        pathType: Exact
+        backend:
+          service:
+            name: payment-redirect
+            port:
+              name: use-annotation
+      - path: /work
+        pathType: Exact
+        backend:
+          service:
+            name: work-redirect
+            port:
+              name: use-annotation
+
+      # ▼ 일반 라우팅
       - path: /api
         pathType: Prefix
         backend:
@@ -25,4 +77,3 @@ spec:
             name: web-svc
             port:
               number: 80
-
