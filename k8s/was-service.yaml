@@ -2,14 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: soloud-was
+  namespace: app
   labels:
-    app: soloud-was
+    app: was
 spec:
   type: ClusterIP
   selector:
-    app: soloud-was
+    app: was
   ports:
     - protocol: TCP
-      port: 80         # 클러스터 안에서 접근할 포트
-      targetPort: 8000 # Pod 내부 컨테이너가 실제로 열고 있는 포트
+      port: 80
+      targetPort: 8000
 
