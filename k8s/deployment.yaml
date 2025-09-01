@@ -15,8 +15,8 @@ spec:
         app: soloud-was
     spec:
       containers:
-      - name: flask
-        image: soloud1025/soloud-was:d74d958fadb02104672e20c7f2470eed5d779e59
+      - name: soloud-was
+        image: soloud1025/soloud-was
         ports:
         - containerPort: 5000
-        #soldesk
+        

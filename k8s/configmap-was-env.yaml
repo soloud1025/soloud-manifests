@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: was-env-cors
+  namespace: app
+data:
+  bootstrap.py: |
+    import os
+    from importlib import import_module
+    from flask import jsonify
+    from flask.sessions import SecureCookieSessionInterface
+
+    def _load_env():
+        try:
+            from dotenv import load_dotenv
+            load_dotenv('/app/.env'); return
+        except Exception:
+            pass
+        try:
+            if os.path.exists('/app/.env'):
+                with open('/app/.env') as f:
+                    for line in f:
+                        line=line.strip()
+                        if not line or line.startswith('#') or '=' not in line: continue
+                        k,v=line.split('=',1)
+                        os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+        except Exception:
+            pass
+    _load_env()
+
+    module = os.environ.get('FLASK_APP_MODULE','app')
+    mod = import_module(module)
+    app = getattr(mod, 'app', None) or getattr(mod, 'application', None)
+    if app is None:
+        raise RuntimeError(f"Flask app not found in module '{module}'")
+
+    # 세션을 쿠키로 강제(Flask-Session/Redis 미사용)
+    app.session_interface = SecureCookieSessionInterface()
+    app.config.pop('SESSION_TYPE', None)
+    app.config.pop('SESSION_REDIS', None)
+    app.config.pop('SESSION_FILE_DIR', None)
+    app.secret_key = os.environ.get('SECRET_KEY', app.config.get('SECRET_KEY') or 'dev-secret-key')
+
+    # CORS
+    ALLOWED_ORIGIN = os.environ.get('ALLOWED_ORIGIN','*')
+    CRED = os.environ.get('CORS_CREDENTIALS','true').lower()=='true'
+    @app.after_request
+    def _cors(resp):
+        if ALLOWED_ORIGIN:
+            resp.headers['Access-Control-Allow-Origin'] = ALLOWED_ORIGIN
+        if CRED:
+            resp.headers['Access-Control-Allow-Credentials'] = 'true'
+        resp.headers.setdefault('Access-Control-Allow-Headers','Content-Type,Authorization')
+        resp.headers.setdefault('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,OPTIONS')
+        vary = resp.headers.get('Vary')
+        resp.headers['Vary'] = ('Origin' if not vary else vary+', Origin')
+        return resp
+
+    @app.route('/api/ping', methods=['GET'])
+    def _ping():
+        return jsonify({'ok': True}), 200
+

@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: was
+  namespace: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: was }
+  template:
+    metadata:
+      labels: { app: was }
+    spec:
+      volumes:
+      - name: was-env-cors
+        configMap:
+          name: was-env-cors
+          items:
+          - key: bootstrap.py
+            path: bootstrap.py
+      containers:
+      - name: was
+        image: soloud1025/soloud-was
+        ports:
+        - containerPort: 8000
+        env:
+        - name: PYTHONPATH
+          value: /opt/bootstrap:${PYTHONPATH}
+        - name: FLASK_APP_MODULE
+          value: app
+        - name: ALLOWED_ORIGIN
+          value: "*"
+        volumeMounts:
+        - name: was-env-cors
+          mountPath: /opt/bootstrap/bootstrap.py
+          subPath: bootstrap.py
+        command: ["/bin/sh","-lc"]
+        args: ["exec gunicorn -w 2 -b 0.0.0.0:8000 bootstrap:app"]
+        readinessProbe:
+          httpGet: { path: "/api/ping", port: 8000 }
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet: { path: "/api/ping", port: 8000 }
+          initialDelaySeconds: 15
+          periodSeconds: 10
+
