@@ -1,0 +1,6 @@
+# 공통 리소스만 관리(네임스페이스, 인그레스, ConfigMap)
+resources:
+  - namespace.yaml
+  - ingress.yaml
+  - configmap-was-env.yaml
+
