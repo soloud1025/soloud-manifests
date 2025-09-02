@@ -13,7 +13,8 @@ spec:
     spec:
       containers:
       - name: web
-        image: soloud1025/soloud-flask   # 태그는 Kustomize에서 덮어씀
+        image: soloud1025/soloud-web
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
         readinessProbe:

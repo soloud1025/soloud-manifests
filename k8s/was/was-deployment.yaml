@@ -24,6 +24,7 @@ spec:
       - name: was
         # CI가 이 줄을 sed로 교체해서 최신 이미지 태그를 넣어줌 (예: :<github_sha>)
         image: soloud1025/soloud-was
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000    # 컨테이너 내부에서 서비스하는 포트(Flask/Gunicorn)
 
