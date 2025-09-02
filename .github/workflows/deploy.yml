@@ -1,0 +1,36 @@
+name: CD - Sync ArgoCD after Manifests Push
+
+on:
+  push:
+    branches: [ "main" ]   # main 브랜치에 push될 때 실행
+
+jobs:
+  sync-argocd:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) 리포 체크아웃
+      - name: Checkout manifests repo
+        uses: actions/checkout@v4
+
+      # 2) ArgoCD CLI 설치
+      - name: Install ArgoCD CLI
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/
+
+      # 3) ArgoCD 로그인
+      - name: ArgoCD Login
+        run: |
+          argocd login ${{ secrets.ARGOCD_SERVER }} \
+            --username ${{ secrets.ARGOCD_USERNAME }} \
+            --password ${{ secrets.ARGOCD_PASSWORD }} \
+            --insecure
+
+      # 4) ArgoCD 앱 동기화
+      - name: Sync WAS & WEB apps
+        run: |
+          argocd app sync soloud-was --grpc-web
+          argocd app sync soloud-web --grpc-web
+
