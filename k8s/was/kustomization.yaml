@@ -1,6 +1,6 @@
 # WAS 전용 리소스만 관리(공통은 base 앱이 관리)
 resources:
-  - ../../base
+  - ../base
   - was-deployment.yaml
   - was-service.yaml
   - was-hpa.yaml
