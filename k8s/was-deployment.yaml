@@ -1,54 +1,66 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: was
-  namespace: app
+  name: was                      # 배포 객체 이름 (WAS)
+  namespace: app                 # 배포할 네임스페이스
 spec:
-  replicas: 1  # 실행할 WAS Pod 수
+  replicas: 2                    # 동시에 띄울 WAS Pod 개수(고가용성)
   selector:
-    matchLabels:
-      app: was  # 이 라벨과 일치하는 Pod만 선택
+    matchLabels: { app: was }    # 이 라벨과 일치하는 Pod를 선택
   template:
     metadata:
-      labels:
-        app: was
+      labels: { app: was }       # 생성되는 Pod에 붙는 라벨
     spec:
+      # ──(A) ConfigMap에 담긴 bootstrap.py를 컨테이너에 파일로 붙일 준비
       volumes:
-        - name: was-env-cors
-          configMap:
-            name: was-env-cors   # bootstrap.py가 들어 있는 ConfigMap 연결
-            items:
-              - key: bootstrap.py
-                path: bootstrap.py  # 파일 이름 지정
+      - name: was-env-cors
+        configMap:
+          name: was-env-cors     # configmap-was-env.yaml의 ConfigMap 이름
+          items:
+          - key: bootstrap.py    # ConfigMap의 key
+            path: bootstrap.py   # 컨테이너에 만들 파일명
+
       containers:
-        - name: was
-          image: docker.io/soloud1025/soloud-was:latest  # GitHub Actions에서 최신 태그로 sed로 바뀜
-          ports:
-            - containerPort: 8000  # Flask 앱이 열릴 포트
-          env:
-            - name: PYTHONPATH
-              value: /opt/bootstrap:${PYTHONPATH}  # bootstrap.py 위치를 Python 모듈 경로에 등록
-            - name: FLASK_APP_MODULE
-              value: app  # app.py 내부의 app 객체를 찾아줌
-            - name: ALLOWED_ORIGIN
-              value: "*"  # CORS 허용 origin
-          volumeMounts:
-            - name: was-env-cors
-              mountPath: /opt/bootstrap/bootstrap.py  # bootstrap.py 파일을 이 경로에 붙임
-              subPath: bootstrap.py
-          command: ["/bin/sh", "-lc"]  # 셸을 실행하고
-          args: ["exec gunicorn -w 2 -b 0.0.0.0:8000 bootstrap:app"]  
-          # → gunicorn으로 bootstrap.py 안의 app 객체 실행
-          readinessProbe:
-            httpGet:
-              path: /api/ping
-              port: 8000
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          livenessProbe:
-            httpGet:
-              path: /api/ping
-              port: 8000
-            initialDelaySeconds: 15
-            periodSeconds: 10
+      - name: was
+        # CI가 이 줄을 sed로 교체해서 최신 이미지 태그를 넣어줌 (예: :<github_sha>)
+        image: soloud1025/soloud-was
+        ports:
+        - containerPort: 8000    # 컨테이너 내부에서 서비스하는 포트(Flask/Gunicorn)
+
+        # ──(B) 애플리케이션이 필요로 하는 환경변수
+        env:
+        - name: PYTHONPATH
+          value: /opt/bootstrap:${PYTHONPATH}   # bootstrap.py를 파이썬이 찾도록 경로 추가
+        - name: FLASK_APP_MODULE
+          value: app                            # app.py 모듈에서 app 객체를 찾겠다는 의미
+        - name: ALLOWED_ORIGIN
+          value: "*"                            # CORS 허용(모든 Origin). 필요 시 특정 도메인으로 제한
+
+        # === Redis 캐시 설정 (비밀번호 없음) ===
+        - name: REDIS_HOST
+          value: my-redis-master.caching.svc.cluster.local   # 클러스터 내부 Redis 서비스 FQDN
+        - name: REDIS_PORT
+          value: "6379"                                      # Redis 기본 포트
+        # (비밀번호 사용 시) REDIS_PASSWORD를 Secret로 추가하고 여기 env로 주입하세요.
+        # =====================================
+
+        # ──(C) 위에서 만든 볼륨(ConfigMap)을 컨테이너 내부 파일 경로에 연결
+        volumeMounts:
+        - name: was-env-cors
+          mountPath: /opt/bootstrap/bootstrap.py   # 이 경로에 파일로 붙임
+          subPath: bootstrap.py                    # 파일 이름(한 파일만 마운트)
+
+        # ──(D) 컨테이너 시작 명령: Gunicorn으로 bootstrap.py 안의 app 실행
+        command: ["/bin/sh","-lc"]
+        args: ["exec gunicorn -w 2 -b 0.0.0.0:8000 bootstrap:app"]
+
+        # ──(E) 헬스체크: K8s가 앱 상태를 주기적으로 확인
+        readinessProbe:                             # 준비 상태(트래픽 받을 준비)
+          httpGet: { path: "/api/ping", port: 8000 }
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:                               # 살아 있음(죽으면 재시작)
+          httpGet: { path: "/api/ping", port: 8000 }
+          initialDelaySeconds: 15
+          periodSeconds: 10
 
