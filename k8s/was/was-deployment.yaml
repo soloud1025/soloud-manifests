@@ -31,7 +31,7 @@ spec:
         # ──(B) 애플리케이션이 필요로 하는 환경변수
         env:
         - name: PYTHONPATH
-          value: /opt/bootstrap:${PYTHONPATH}   # bootstrap.py를 파이썬이 찾도록 경로 추가
+          value: /opt/bootstrap:/app:${PYTHONPATH}  # bootstrap.py를 파이썬이 찾도록 경로 추가
         - name: FLASK_APP_MODULE
           value: app                            # app.py 모듈에서 app 객체를 찾겠다는 의미
         - name: ALLOWED_ORIGIN
