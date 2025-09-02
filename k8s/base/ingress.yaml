@@ -68,14 +68,14 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: was-svc                   # Flask 앱 (WAS)으로 보내는 경로
+                name: was-service                   # Flask 앱 (WAS)으로 보내는 경로
                 port:
                   number: 8000
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: web-svc                   # 프론트엔드 웹으로 보내는 경로
+                name: web-service                   # 프론트엔드 웹으로 보내는 경로
                 port:
                   number: 80
 
