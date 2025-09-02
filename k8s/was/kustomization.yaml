@@ -1,5 +1,4 @@
 resources:
-  - configmap-was-env.yaml
   - was-deployment.yaml
   - was-service.yaml
   - was-hpa.yaml
