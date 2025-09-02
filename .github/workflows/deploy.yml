@@ -1,15 +1,15 @@
-name: CD - Sync ArgoCD after Manifests Push
+name: Deploy with ArgoCD
 
 on:
   push:
-    branches: [ "main" ]   # main 브랜치에 push될 때 실행
+    branches: [ "main" ]   # manifests repo main 브랜치에 변경이 있을 때 실행
 
 jobs:
-  sync-argocd:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) 리포 체크아웃
+      # 1) 매니페스트 레포 체크아웃
       - name: Checkout manifests repo
         uses: actions/checkout@v4
 
@@ -21,16 +21,22 @@ jobs:
           sudo mv argocd /usr/local/bin/
 
       # 3) ArgoCD 로그인
-      - name: ArgoCD Login
+      - name: Login to ArgoCD
         run: |
-          argocd login ${{ secrets.ARGOCD_SERVER }} \
-            --username ${{ secrets.ARGOCD_USERNAME }} \
-            --password ${{ secrets.ARGOCD_PASSWORD }} \
+          argocd login $ARGOCD_SERVER \
+            --username $ARGOCD_USERNAME \
+            --password $ARGOCD_PASSWORD \
             --insecure
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
+          ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
 
-      # 4) ArgoCD 앱 동기화
-      - name: Sync WAS & WEB apps
+      # 4) 앱 Sync & Health 체크
+      - name: Sync ArgoCD apps
         run: |
-          argocd app sync soloud-was --grpc-web
-          argocd app sync soloud-web --grpc-web
+          argocd app sync soloud-was --prune --timeout 300
+          argocd app wait soloud-was --health --timeout 300
+          argocd app sync soloud-web --prune --timeout 300
+          argocd app wait soloud-web --health --timeout 300
 
