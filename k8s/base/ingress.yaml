@@ -1,13 +1,12 @@
-iapiVersion: networking.k8s.io/v1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: app-ing
   namespace: app
   annotations:
-    alb.ingress.kubernetes.io/scheme: internet-facing        # 외부에서 접속 가능하게 설정 (ALB 퍼블릭 모드)
-    alb.ingress.kubernetes.io/target-type: ip                # ALB가 Pod에 직접 연결되도록 설정 (IP 기반)
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
 
-    # ▼ 특정 경로로 접속하면 HTML 파일로 리다이렉트하는 규칙 (예: /register → /register.html)
     alb.ingress.kubernetes.io/actions.register-redirect: '{"Type":"redirect","RedirectConfig":{"StatusCode":"HTTP_302","Path":"/register.html"}}'
     alb.ingress.kubernetes.io/actions.login-redirect:    '{"Type":"redirect","RedirectConfig":{"StatusCode":"HTTP_302","Path":"/login.html"}}'
     alb.ingress.kubernetes.io/actions.mypage-redirect:   '{"Type":"redirect","RedirectConfig":{"StatusCode":"HTTP_302","Path":"/mypage.html"}}'
@@ -17,65 +16,65 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - http:
-        paths:
-          # ▼ 정확히 /register 등으로 요청하면 redirect로 처리
-          - path: /register
-            pathType: Exact
-            backend:
-              service:
-                name: register-redirect          # 실제 Service 리소스는 필요 없음 (ALB가 자체 처리)
-                port:
-                  name: use-annotation           # redirect는 이름 기반 포트 사용
-          - path: /login
-            pathType: Exact
-            backend:
-              service:
-                name: login-redirect
-                port:
-                  name: use-annotation
-          - path: /mypage
-            pathType: Exact
-            backend:
-              service:
-                name: mypage-redirect
-                port:
-                  name: use-annotation
-          - path: /paycomp
-            pathType: Exact
-            backend:
-              service:
-                name: paycomp-redirect
-                port:
-                  name: use-annotation
-          - path: /payment
-            pathType: Exact
-            backend:
-              service:
-                name: payment-redirect
-                port:
-                  name: use-annotation
-          - path: /work
-            pathType: Exact
-            backend:
-              service:
-                name: work-redirect
-                port:
-                  name: use-annotation
+  - http:
+      paths:
+      # ▼ Exact 리다이렉트
+      - path: /register
+        pathType: Exact
+        backend:
+          service:
+            name: register-redirect
+            port:
+              name: use-annotation
+      - path: /login
+        pathType: Exact
+        backend:
+          service:
+            name: login-redirect
+            port:
+              name: use-annotation
+      - path: /mypage
+        pathType: Exact
+        backend:
+          service:
+            name: mypage-redirect
+            port:
+              name: use-annotation
+      - path: /paycomp
+        pathType: Exact
+        backend:
+          service:
+            name: paycomp-redirect
+            port:
+              name: use-annotation
+      - path: /payment
+        pathType: Exact
+        backend:
+          service:
+            name: payment-redirect
+            port:
+              name: use-annotation
+      - path: /work
+        pathType: Exact
+        backend:
+          service:
+            name: work-redirect
+            port:
+              name: use-annotation
 
-          # ▼ 그 외 일반적인 라우팅 처리
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: was-service                   # Flask 앱 (WAS)으로 보내는 경로
-                port:
-                  number: 8000
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: web-service                   # 프론트엔드 웹으로 보내는 경로
-                port:
-                  number: 80
+      # ▼ 일반 라우팅
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: was-service     # 네 실제 WAS 서비스 이름
+            port:
+              number: 8000
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-service     # 네 실제 WEB 서비스 이름
+            port:
+              number: 80
 
