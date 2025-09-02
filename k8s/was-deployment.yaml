@@ -4,52 +4,51 @@ metadata:
   name: was
   namespace: app
 spec:
-  replicas: 2
+  replicas: 1  # 실행할 WAS Pod 수
   selector:
-    matchLabels: { app: was }
+    matchLabels:
+      app: was  # 이 라벨과 일치하는 Pod만 선택
   template:
     metadata:
-      labels: { app: was }
+      labels:
+        app: was
     spec:
       volumes:
-      - name: was-env-cors
-        configMap:
-          name: was-env-cors
-          items:
-          - key: bootstrap.py
-            path: bootstrap.py
-      containers:
-      - name: was
-        image: soloud1025/soloud-was
-        ports:
-        - containerPort: 8000
-        env:
-        - name: PYTHONPATH
-          value: /opt/bootstrap:${PYTHONPATH}
-        - name: FLASK_APP_MODULE
-          value: app
-        - name: ALLOWED_ORIGIN
-          value: "*"
-
-        # === Redis 캐시 설정 (비밀번호 없음) ===
-        - name: REDIS_HOST
-          value: my-redis-master.caching.svc.cluster.local
-        - name: REDIS_PORT
-          value: "6379"
-        # =====================================
-
-        volumeMounts:
         - name: was-env-cors
-          mountPath: /opt/bootstrap/bootstrap.py
-          subPath: bootstrap.py
-        command: ["/bin/sh","-lc"]
-        args: ["exec gunicorn -w 2 -b 0.0.0.0:8000 bootstrap:app"]
-        readinessProbe:
-          httpGet: { path: "/api/ping", port: 8000 }
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        livenessProbe:
-          httpGet: { path: "/api/ping", port: 8000 }
-          initialDelaySeconds: 15
-          periodSeconds: 10
+          configMap:
+            name: was-env-cors   # bootstrap.py가 들어 있는 ConfigMap 연결
+            items:
+              - key: bootstrap.py
+                path: bootstrap.py  # 파일 이름 지정
+      containers:
+        - name: was
+          image: docker.io/soloud1025/soloud-was:latest  # GitHub Actions에서 최신 태그로 sed로 바뀜
+          ports:
+            - containerPort: 8000  # Flask 앱이 열릴 포트
+          env:
+            - name: PYTHONPATH
+              value: /opt/bootstrap:${PYTHONPATH}  # bootstrap.py 위치를 Python 모듈 경로에 등록
+            - name: FLASK_APP_MODULE
+              value: app  # app.py 내부의 app 객체를 찾아줌
+            - name: ALLOWED_ORIGIN
+              value: "*"  # CORS 허용 origin
+          volumeMounts:
+            - name: was-env-cors
+              mountPath: /opt/bootstrap/bootstrap.py  # bootstrap.py 파일을 이 경로에 붙임
+              subPath: bootstrap.py
+          command: ["/bin/sh", "-lc"]  # 셸을 실행하고
+          args: ["exec gunicorn -w 2 -b 0.0.0.0:8000 bootstrap:app"]  
+          # → gunicorn으로 bootstrap.py 안의 app 객체 실행
+          readinessProbe:
+            httpGet:
+              path: /api/ping
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/ping
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
 
