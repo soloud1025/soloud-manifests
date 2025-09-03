@@ -33,8 +33,8 @@ jobs:
           ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
 
       # 4) WAS 앱 Sync & Health 체크
-      - name: Sync soloud-was App
+      - name: Sync was-app App
         run: |
-          argocd app sync soloud-was --prune --timeout 300
-          argocd app wait soloud-was --health --timeout 300
+          argocd app sync was-app --prune --timeout 300
+          argocd app wait was-app --health --timeout 300
 

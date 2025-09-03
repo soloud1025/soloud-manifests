@@ -1,67 +1,60 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: soloud-was                      # 배포 객체 이름 (WAS)
-  namespace: app                 # 배포할 네임스페이스
+  name: was-app
+  namespace: app
 spec:
-  replicas: 2                    # 동시에 띄울 WAS Pod 개수(고가용성)
+  replicas: 2
   selector:
-    matchLabels: { app: was }    # 이 라벨과 일치하는 Pod를 선택
+    matchLabels:
+      app: was
   template:
     metadata:
-      labels: { app: was }       # 생성되는 Pod에 붙는 라벨
+      labels:
+        app: was
     spec:
-      # ──(A) ConfigMap에 담긴 bootstrap.py를 컨테이너에 파일로 붙일 준비
       volumes:
       - name: was-env-cors
         configMap:
-          name: was-env-cors     # configmap-was-env.yaml의 ConfigMap 이름
+          name: was-env-cors
           items:
-          - key: bootstrap.py    # ConfigMap의 key
-            path: bootstrap.py   # 컨테이너에 만들 파일명
+          - key: bootstrap.py
+            path: bootstrap.py
 
       containers:
       - name: was
-        # CI가 이 줄을 sed로 교체해서 최신 이미지 태그를 넣어줌 (예: :<github_sha>)
-        image: soloud1025/soloud-was
+        image: soloud1025/soloud-was   # GitHub Actions에서 자동 교체
         imagePullPolicy: Always
         ports:
-        - containerPort: 8000    # 컨테이너 내부에서 서비스하는 포트(Flask/Gunicorn)
+        - containerPort: 8000
 
-        # ──(B) 애플리케이션이 필요로 하는 환경변수
         env:
         - name: PYTHONPATH
-          value: /opt/bootstrap:/app:${PYTHONPATH}  # bootstrap.py를 파이썬이 찾도록 경로 추가
+          value: /opt/bootstrap:/app:${PYTHONPATH}
         - name: FLASK_APP_MODULE
-          value: app                            # app.py 모듈에서 app 객체를 찾겠다는 의미
+          value: app
         - name: ALLOWED_ORIGIN
-          value: "*"                            # CORS 허용(모든 Origin). 필요 시 특정 도메인으로 제한
-
-        # === Redis 캐시 설정 (비밀번호 없음) ===
+          value: "*"
         - name: REDIS_HOST
-          value: my-redis-master.caching.svc.cluster.local   # 클러스터 내부 Redis 서비스 FQDN
+          value: my-redis-master.caching.svc.cluster.local
         - name: REDIS_PORT
-          value: "6379"                                      # Redis 기본 포트
-        # (비밀번호 사용 시) REDIS_PASSWORD를 Secret로 추가하고 여기 env로 주입하세요.
-        # =====================================
+          value: "6379"
 
-        # ──(C) 위에서 만든 볼륨(ConfigMap)을 컨테이너 내부 파일 경로에 연결
         volumeMounts:
         - name: was-env-cors
-          mountPath: /opt/bootstrap/bootstrap.py   # 이 경로에 파일로 붙임
-          subPath: bootstrap.py                    # 파일 이름(한 파일만 마운트)
+          mountPath: /opt/bootstrap/bootstrap.py
+          subPath: bootstrap.py
 
-        # ──(D) 컨테이너 시작 명령: Gunicorn으로 bootstrap.py 안의 app 실행
-        command: ["/bin/sh","-lc"]
-        args: ["exec gunicorn -w 2 -b 0.0.0.0:8000 bootstrap:app"]
-
-        # ──(E) 헬스체크: K8s가 앱 상태를 주기적으로 확인
-        readinessProbe:                             # 준비 상태(트래픽 받을 준비)
-          httpGet: { path: "/api/ping", port: 8000 }
+        readinessProbe:
+          httpGet:
+            path: /api/ping
+            port: 8000
           initialDelaySeconds: 5
           periodSeconds: 5
-        livenessProbe:                               # 살아 있음(죽으면 재시작)
-          httpGet: { path: "/api/ping", port: 8000 }
+        livenessProbe:
+          httpGet:
+            path: /api/ping
+            port: 8000
           initialDelaySeconds: 15
           periodSeconds: 10
 
