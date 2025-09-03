@@ -28,6 +28,15 @@ spec:
         ports:
         - containerPort: 8000
 
+        # ★ 추가: HPA가 % 계산하려면 반드시 필요 (usage / requests.cpu)
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
         env:
         - name: PYTHONPATH
           value: /opt/bootstrap:/app:${PYTHONPATH}
