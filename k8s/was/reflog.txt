@@ -1,0 +1,11 @@
+2c054e2 HEAD@{0}: pull --rebase origin main: Fast-forward
+36e16b8 HEAD@{1}: rebase (abort): returning to refs/heads/main
+ca9b1bc HEAD@{2}: commit: 백업용 ArgoCD Application yaml 추가
+cccf19c HEAD@{3}: commit: 백업용 ArgoCD Application yaml 추가
+227d747 HEAD@{4}: commit: fix: was-hpa 대상 Deployment 이름을 was로 수정
+0daf3b2 HEAD@{5}: commit: kustomization.yaml
+ba21c34 HEAD@{6}: commit: 9
+316be81 HEAD@{7}: pull origin main --rebase (start): checkout 316be81337ce01153ff13bf2ec96b7b32eb1c409
+36e16b8 HEAD@{8}: commit: 0903
+fc9665f HEAD@{9}: commit: kustomization.yaml
+4558590 HEAD@{10}: clone: from github.com:soloud1025/soloud-manifests.git
