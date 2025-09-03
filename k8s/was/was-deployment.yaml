@@ -23,7 +23,7 @@ spec:
 
       containers:
       - name: was
-        image: soloud1025/soloud-was   # GitHub Actions에서 자동 교체
+        image: soloud1025/soloud-was:a7d6e9429f2d8d1c32f4ab5a60ba8698c8a71539
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
