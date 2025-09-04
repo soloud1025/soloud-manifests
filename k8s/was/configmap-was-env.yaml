@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: was-env-cors        # ConfigMap 이름. WAS 앱에서 사용할 bootstrap.py 파일을 담고 있음
+  namespace: app            # 이 ConfigMap이 속할 네임스페이스
+
+data:
+  bootstrap.py: |           # 실제 Flask 앱 실행을 위한 Python 파일. 여러 기능이 들어 있음
+    import os
+    from importlib import import_module
+    from flask import jsonify
+    from flask.sessions import SecureCookieSessionInterface
+
+    # (1) .env 파일 불러오기
+    # └> 환경설정(.env 파일)을 자동으로 읽어서 Flask 앱에 적용
+    def _load_env():
+        try:
+            # dotenv 라이브러리가 설치되어 있으면 이걸로 .env 파일 로드
+            from dotenv import load_dotenv
+            load_dotenv('/app/.env'); return
+        except Exception:
+            pass
+        try:
+            # fallback 방식: dotenv가 없어도 직접 읽어서 환경변수로 설정
+            if os.path.exists('/app/.env'):
+                with open('/app/.env') as f:
+                    for line in f:
+                        line=line.strip()
+                        # 주석(#) 또는 빈 줄은 무시
+                        if not line or line.startswith('#') or '=' not in line: continue
+                        k,v=line.split('=',1)
+                        # 환경변수 등록
+                        os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+        except Exception:
+            pass
+    _load_env()  # 함수 실행
+
+    # (2) Flask 앱 불러오기
+    # └> 환경변수 FLASK_APP_MODULE에 정의된 모듈(app.py 등)에서 Flask 객체 가져옴
+    module = os.environ.get('FLASK_APP_MODULE','app')  # 기본값은 app.py
+    mod = import_module(module)
+    app = getattr(mod, 'app', None) or getattr(mod, 'application', None)
+    if app is None:
+        raise RuntimeError(f"Flask app not found in module '{module}'")
+
+    # (3) 세션 설정 변경
+    # └> Redis 같은 외부 저장소 없이, 기본 쿠키 기반 세션으로 강제
+    app.session_interface = SecureCookieSessionInterface()
+    app.config.pop('SESSION_TYPE', None)
+    app.config.pop('SESSION_REDIS', None)
+    app.config.pop('SESSION_FILE_DIR', None)
+    app.secret_key = os.environ.get('SECRET_KEY', app.config.get('SECRET_KEY') or 'dev-secret-key')
+
+    # (4) CORS 설정
+    # └> 웹 프론트에서 백엔드로 요청할 때, 보안 정책 우회 허용
+    ALLOWED_ORIGIN = os.environ.get('ALLOWED_ORIGIN','*')  # 허용된 origin, 기본은 모든 곳(*)
+    CRED = os.environ.get('CORS_CREDENTIALS','true').lower()=='true'  # 쿠키 포함 여부
+
+    @app.after_request
+    def _cors(resp):
+        # 응답 헤더에 CORS 관련 설정을 추가
+        if ALLOWED_ORIGIN:
+            resp.headers['Access-Control-Allow-Origin'] = ALLOWED_ORIGIN
+        if CRED:
+            resp.headers['Access-Control-Allow-Credentials'] = 'true'
+        resp.headers.setdefault('Access-Control-Allow-Headers','Content-Type,Authorization')
+        resp.headers.setdefault('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,OPTIONS')
+        # 캐시를 구분하기 위한 Vary 헤더 설정
+        vary = resp.headers.get('Vary')
+        resp.headers['Vary'] = ('Origin' if not vary else vary+', Origin')
+        return resp
+
+    # (5) 헬스체크용 엔드포인트
+    # └> ArgoCD, K8s가 “앱이 살아있는지” 확인할 수 있게 만듦
+    @app.route('/api/ping', methods=['GET'])
+    def _ping():
+        return jsonify({'ok': True}), 200
+
