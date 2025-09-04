@@ -28,7 +28,6 @@ spec:
         ports:
         - containerPort: 8000
 
-        # ★ 추가: HPA가 % 계산하려면 반드시 필요 (usage / requests.cpu)
         resources:
           requests:
             cpu: "100m"
@@ -48,6 +47,9 @@ spec:
           value: my-redis-master.caching.svc.cluster.local
         - name: REDIS_PORT
           value: "6379"
+        # 🔑 DB URL 추가
+        - name: DB_URL
+          value: "mysql+pymysql://admin:soldesk901@project-db.c94ss824as09.ap-northeast-2.rds.amazonaws.com:3306/project?charset=utf8mb4"
 
         volumeMounts:
         - name: was-env-cors
