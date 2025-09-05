@@ -14,58 +14,52 @@ spec:
         app: was
     spec:
       volumes:
-      - name: was-env-cors
-        configMap:
-          name: was-env-cors
-          items:
-          - key: bootstrap.py
-            path: bootstrap.py
-
-      containers:
-      - name: was
-        image: soloud1025/soloud-was:9f517a9e7b6c446eb2cd2286284891f307e5cf53
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8000
-
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
-
-        env:
-        - name: PYTHONPATH
-          value: /opt/bootstrap:/app:${PYTHONPATH}
-        - name: FLASK_APP_MODULE
-          value: app
-        - name: ALLOWED_ORIGIN
-          value: "*"
-        - name: REDIS_HOST
-          value: my-redis-master.caching.svc.cluster.local
-        - name: REDIS_PORT
-          value: "6379"
-        # 🔑 DB URL 추가
-        - name: DB_URL
-          value: "mysql+pymysql://admin:soldesk901@project-db.c94ss824as09.ap-northeast-2.rds.amazonaws.com:3306/project?charset=utf8mb4"
-
-        volumeMounts:
         - name: was-env-cors
-          mountPath: /opt/bootstrap/bootstrap.py
-          subPath: bootstrap.py
-
-        readinessProbe:
-          httpGet:
-            path: /api/ping
-            port: 8000
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        livenessProbe:
-          httpGet:
-            path: /api/ping
-            port: 8000
-          initialDelaySeconds: 15
-          periodSeconds: 10
-
+          configMap:
+            name: was-env-cors
+            items:
+              - key: bootstrap.py
+                path: bootstrap.py
+      containers:
+        - name: was
+          image: ghcr.io/soloud1025/soloud-was:9f517a9e7b6c446eb2cd2286284891f307e5cf53
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          env:
+            - name: PYTHONPATH
+              value: /opt/bootstrap:/app:${PYTHONPATH}
+            - name: FLASK_APP_MODULE
+              value: app
+            - name: ALLOWED_ORIGIN
+              value: "*"
+            - name: REDIS_HOST
+              value: my-redis-master.caching.svc.cluster.local
+            - name: REDIS_PORT
+              value: "6379"
+            # 🔑 DB URL 추가
+            - name: DB_URL
+              value: "mysql+pymysql://admin:soldesk901@project-db.c94ss824as09.ap-northeast-2.rds.amazonaws.com:3306/project?charset=utf8mb4"
+          volumeMounts:
+            - name: was-env-cors
+              mountPath: /opt/bootstrap/bootstrap.py
+              subPath: bootstrap.py
+          readinessProbe:
+            httpGet:
+              path: /api/ping
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/ping
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
