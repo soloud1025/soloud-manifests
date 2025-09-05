@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: 'https://github.com/soloud1025/soloud-manifests.git'
     targetRevision: main
-    path: k8s/was
+    path: k8s
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: app
