@@ -23,7 +23,7 @@ spec:
 
       containers:
       - name: was
-        image: ghcr.io/soloud1025/soloud-was:6f82773d82269fe6b4b9b16e83ea506a950cb593
+        image: soloud1025/soloud-was:9f517a9e7b6c446eb2cd2286284891f307e5cf53
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
