@@ -22,7 +22,7 @@ spec:
                 path: bootstrap.py
       containers:
         - name: was
-          image: ghcr.io/soloud1025/soloud-was:9f517a9e7b6c446eb2cd2286284891f307e5cf53
+          image: ghcr.io/soloud1025/soloud-was:23278cda47795139def5a6f94b1f5ede6da0114a
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
